@@ -1,4 +1,6 @@
-Use -a to sepcific which model being used, --depth to spcific depth of the model(layers). Can leave other default with 91% accuracy. 
+Enter cifar/weight-level to run basic resnet model on cifar.
+
+Use -a to sepcific which model being used(preresnet), --depth to spcific depth of the model(layers). Can leave other default with 91% accuracy. 
 
 Example of argument:
 
