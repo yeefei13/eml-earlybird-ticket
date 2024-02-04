@@ -1,0 +1,5 @@
+# Ignore all files in the data directory
+cifar/weight-level/data/*
+
+# Ignore all files in the results directory
+cifar/weight-level/results/*
