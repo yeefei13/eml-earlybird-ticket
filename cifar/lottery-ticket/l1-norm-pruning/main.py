@@ -150,7 +150,8 @@ def train(epoch):
         optimizer.zero_grad()
         output = model(data)
         loss = F.cross_entropy(output, target)
-        avg_loss += loss.data[0]
+        # avg_loss += loss.data[0]
+        avg_loss += loss.item()
         pred = output.data.max(1, keepdim=True)[1]
         train_acc += pred.eq(target.data.view_as(pred)).cpu().sum()
         loss.backward()
@@ -160,7 +161,7 @@ def train(epoch):
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.1f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.data[0]))
+                100. * batch_idx / len(train_loader), loss.item()))
     history_score[epoch][0] = avg_loss / len(train_loader)
     history_score[epoch][1] = train_acc / float(len(train_loader))
 
@@ -173,7 +174,7 @@ def test():
             data, target = data.cuda(), target.cuda()
         data, target = Variable(data, volatile=True), Variable(target)
         output = model(data)
-        test_loss += F.cross_entropy(output, target, size_average=False).data[0] # sum up batch loss
+        test_loss += F.cross_entropy(output, target, size_average=False).item() # sum up batch loss
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
         correct += pred.eq(target.data.view_as(pred)).cpu().sum()
 
@@ -188,27 +189,31 @@ def save_checkpoint(state, is_best, filepath):
     if is_best:
         shutil.copyfile(os.path.join(filepath, 'checkpoint.pth.tar'), os.path.join(filepath, 'model_best.pth.tar'))
 
-best_prec1 = 0.
-torch.save({'state_dict': model.state_dict()}, os.path.join(args.save, 'init.pth.tar'))
+def main():
+    best_prec1 = 0.
+    torch.save({'state_dict': model.state_dict()}, os.path.join(args.save, 'init.pth.tar'))
 
-for epoch in range(args.start_epoch, args.epochs):
-    if epoch in [args.epochs*0.5, args.epochs*0.75]:
-        for param_group in optimizer.param_groups:
-            param_group['lr'] *= 0.1
-    train(epoch)
-    prec1 = test()
-    history_score[epoch][2] = prec1
+    for epoch in range(args.start_epoch, args.epochs):
+        if epoch in [args.epochs*0.5, args.epochs*0.75]:
+            for param_group in optimizer.param_groups:
+                param_group['lr'] *= 0.1
+        train(epoch)
+        prec1 = test()
+        history_score[epoch][2] = prec1
+        np.savetxt(os.path.join(args.save, 'record.txt'), history_score, fmt = '%10.5f', delimiter=',')
+        is_best = prec1 > best_prec1
+        best_prec1 = max(prec1, best_prec1)
+        save_checkpoint({
+            'epoch': epoch + 1,
+            'state_dict': model.state_dict(),
+            'best_prec1': best_prec1,
+            'optimizer': optimizer.state_dict(),
+            'cfg': model.cfg
+        }, is_best, filepath=args.save)
+
+    print("Best accuracy: "+str(best_prec1))
+    history_score[-1][0] = best_prec1
     np.savetxt(os.path.join(args.save, 'record.txt'), history_score, fmt = '%10.5f', delimiter=',')
-    is_best = prec1 > best_prec1
-    best_prec1 = max(prec1, best_prec1)
-    save_checkpoint({
-        'epoch': epoch + 1,
-        'state_dict': model.state_dict(),
-        'best_prec1': best_prec1,
-        'optimizer': optimizer.state_dict(),
-        'cfg': model.cfg
-    }, is_best, filepath=args.save)
-
-print("Best accuracy: "+str(best_prec1))
-history_score[-1][0] = best_prec1
-np.savetxt(os.path.join(args.save, 'record.txt'), history_score, fmt = '%10.5f', delimiter=',')
+    
+if __name__ == '__main__':
+    main()
