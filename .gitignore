@@ -2,7 +2,7 @@
 cifar/weight-level/data/*
 
 # Ignore all files in the results directory
-cifar/weight-level/results/*
+# cifar/weight-level/results/*
 
 cifar/lottery-ticket/l1-norm-pruning/data.cifar10*
 
