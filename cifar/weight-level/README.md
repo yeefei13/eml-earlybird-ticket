@@ -19,6 +19,9 @@ python cifar.py --dataset cifar10 --arch densenet --depth 100 --compressionRate 
 ```
 
 ## Prune
+python cifar_prune.py --arch preresnet --depth 20 --dataset cifar10 --percent 0.5 --resume C:\Users\yifei\OneDrive\桌面\rethinking-network-pruning-master\cifar\weight-level\results\model_best.pth.tar --save_dir ./prune_result_0.5 
+
+python lt.py --arch preresnet --depth 20 --dataset cifar10 --percent 0.5 --resume C:\Users\yifei\OneDrive\桌面\rethinking-network-pruning-master\cifar\weight-level\results\model_best.pth.tar --save_dir ./lottery_result_0.5 
 
 ```shell
 python cifar_prune.py --arch vgg19_bn --depth 19 --dataset cifar10 --percent 0.3 --resume [PATH TO THE MODEL] --save_dir [DIRECTORY TO STORE RESULT]
@@ -29,6 +32,11 @@ python cifar_prune.py --arch densenet --depth 100 --compressionRate 2 --dataset 
 
 
 ## Fine-tune
+
+python cifar_finetune.py --arch preresnet --depth 20 --dataset cifar10  --resume C:\Users\yifei\OneDrive\桌面\rethinking-network-pruning-master\cifar\weight-level\prune_result_0.7\pruned.pth.tar --save_dir test_checkpoint_70/
+
+python cifar_finetune.py --arch preresnet --depth 20 --dataset cifar10 --epochs 160 --lr 0.1 --schedule 40 80 120 --resume C:\Users\yifei\OneDrive\桌面\rethinking-network-pruning-master\cifar\weight-level\lottery_result_0.5\pruned.pth.tar --save_dir lottery_checkpoint_50/
+
 ```shell
 python cifar_finetune.py --arch vgg19_bn --depth 19 --dataset cifar10  --resume [PATH TO THE PRUNED MODEL]
 python cifar_finetune.py --arch preresnet --depth 110 --dataset cifar10  --resume [PATH TO THE PRUNED MODEL]

@@ -1,3 +1,3 @@
-Before pruning: Test Loss:  0.31523419, Test Acc:  90.69
+Before pruning: Test Loss:  0.31523409, Test Acc:  90.69
 Total conv params: 173488, Pruned conv params: 86745.0, Pruned ratio: 0.5000057816505432
-After Pruning: Test Loss:  0.39055147, Test Acc:  88.23
+After Pruning: Test Loss:  0.39055140, Test Acc:  88.23
