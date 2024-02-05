@@ -18,7 +18,7 @@ parser.add_argument('--test-batch-size', type=int, default=256, metavar='N',
                     help='input batch size for testing (default: 256)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='disables CUDA training')
-parser.add_argument('--depth', type=int, default=56,
+parser.add_argument('--depth', type=int, default=20,
                     help='depth of the resnet')
 parser.add_argument('--model', default='', type=str, metavar='PATH',
                     help='path to the model (default: none)')
@@ -49,7 +49,7 @@ if args.model:
         print("=> loaded checkpoint '{}' (epoch {}) Prec1: {:f}"
               .format(args.model, checkpoint['epoch'], best_prec1))
     else:
-        print("=> no checkpoint found at '{}'".format(args.resume))
+        print("=> no checkpoint found at '{}'".format(args.model))
 
 print('Pre-processing Successful!')
 
@@ -84,64 +84,70 @@ def test(model):
         correct, len(test_loader.dataset), 100. * correct / len(test_loader.dataset)))
     return correct / float(len(test_loader.dataset))
 
-acc = test(model)
 
-skip = {
-    'A': [16, 20, 38, 54],
-    'B': [16, 18, 20, 34, 38, 54],
-}
+def main():
+    acc = test(model)
 
-prune_prob = {
-    'A': [0.1, 0.1, 0.1],
-    'B': [0.6, 0.3, 0.1],
-}
+    skip = {
+        'A': [16, 20, 38, 54],
+        'B': [16, 18, 20, 34, 38, 54],
+    }
 
-layer_id = 1
-cfg = []
-cfg_mask = []
-for m in model.modules():
-    if isinstance(m, nn.Conv2d):
-        out_channels = m.weight.data.shape[0]
-        if layer_id in skip[args.v]:
-            cfg_mask.append(torch.ones(out_channels))
-            cfg.append(out_channels)
+    prune_prob = {
+        'A': [0.9, 0.9, 0.9],
+        'B': [0.6, 0.3, 0.1],
+    }
+
+    layer_id = 1
+    cfg = []
+    cfg_mask = []
+    for m in model.modules():
+        if isinstance(m, nn.Conv2d):
+            out_channels = m.weight.data.shape[0]
+            # if layer_id in skip[args.v]:
+            #     cfg_mask.append(torch.ones(out_channels))
+            #     cfg.append(out_channels)
+            #     layer_id += 1
+            #     continue
+            if layer_id % 2 == 0:
+                if layer_id <= 20:
+                    stage = 0
+                elif layer_id <= 36:
+                    stage = 1
+                else:
+                    stage = 2
+                prune_prob_stage = prune_prob[args.v][stage]
+                weight_copy = m.weight.data.abs().clone().cpu().numpy()
+                L1_norm = np.sum(weight_copy, axis=(1,2,3))
+                num_keep = int(out_channels * (1 - prune_prob_stage))
+                arg_max = np.argsort(L1_norm)
+                if args.prune == 'large':
+                    arg_max_rev = arg_max[::-1][:num_keep]
+                elif args.prune == 'small':
+                    arg_max_rev = arg_max[:num_keep]
+                elif args.prune == 'random':
+                    arg_max_rev = np.random.choice(arg_max, num_keep, replace=False)
+                mask = torch.zeros(out_channels)
+                mask[arg_max_rev.tolist()] = 1
+
+                mask_neg = np.ones(out_channels)
+                mask_neg[arg_max_rev.tolist()] = 0
+                m.weight.data[mask_neg,:,:,:] = 0
+
+                cfg_mask.append(mask)
+                cfg.append(num_keep)
+                layer_id += 1
+                continue
             layer_id += 1
-            continue
-        if layer_id % 2 == 0:
-            if layer_id <= 18:
-                stage = 0
-            elif layer_id <= 36:
-                stage = 1
-            else:
-                stage = 2
-            prune_prob_stage = prune_prob[args.v][stage]
-            weight_copy = m.weight.data.abs().clone().cpu().numpy()
-            L1_norm = np.sum(weight_copy, axis=(1,2,3))
-            num_keep = int(out_channels * (1 - prune_prob_stage))
-            arg_max = np.argsort(L1_norm)
-            if args.prune == 'large':
-                arg_max_rev = arg_max[::-1][:num_keep]
-            elif args.prune == 'small':
-                arg_max_rev = arg_max[:num_keep]
-            elif args.prune == 'random':
-                arg_max_rev = np.random.choice(arg_max, num_keep, replace=False)
-            mask = torch.zeros(out_channels)
-            mask[arg_max_rev.tolist()] = 1
 
-            mask_neg = np.ones(out_channels)
-            mask_neg[arg_max_rev.tolist()] = 0
-            m.weight.data[mask_neg,:,:,:] = 0
+    torch.save({'cfg': cfg, 'state_dict': model.state_dict()}, os.path.join(args.save, 'pruned.pth.tar'))
+    acc = test(model)
 
-            cfg_mask.append(mask)
-            cfg.append(num_keep)
-            layer_id += 1
-            continue
-        layer_id += 1
+    num_parameters = sum([param.nelement() for param in model.parameters()])
+    with open(os.path.join(args.save, "prune.txt"), "w") as fp:
+        fp.write("Number of parameters: \n"+str(num_parameters)+"\n")
+        fp.write("Test accuracy: \n"+str(acc)+"\n")
 
-torch.save({'cfg': cfg, 'state_dict': model.state_dict()}, os.path.join(args.save, 'pruned.pth.tar'))
-acc = test(model)
 
-num_parameters = sum([param.nelement() for param in model.parameters()])
-with open(os.path.join(args.save, "prune.txt"), "w") as fp:
-    fp.write("Number of parameters: \n"+str(num_parameters)+"\n")
-    fp.write("Test accuracy: \n"+str(acc)+"\n")
+if __name__ == '__main__':
+    main()
