@@ -42,7 +42,6 @@ if args.model:
         print("=> loading checkpoint '{}'".format(args.model))
         checkpoint = torch.load(args.model, map_location=torch.device('cpu'))
         args.start_epoch = checkpoint['epoch']
-        print(checkpoint)
         # best_prec1 = checkpoint['best_prec1']
         # Adjust the keys
         new_state_dict = {k.replace('module.', ''): v for k, v in checkpoint['state_dict'].items()}
