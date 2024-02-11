@@ -171,6 +171,7 @@ def main():
         print('==> Resuming from checkpoint..')
         assert os.path.isfile(args.resume), 'Error: no checkpoint directory found!'
         checkpoint = torch.load(args.resume)
+        print(checkpoint['state_dict'])
         model.load_state_dict(checkpoint['state_dict'])
 
     logger = Logger(os.path.join(args.save_dir, 'log_finetune.txt'), title=title)
