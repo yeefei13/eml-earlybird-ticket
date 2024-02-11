@@ -131,7 +131,7 @@ def train(epoch):
     train_acc = 0.
     for batch_idx, (data, target) in enumerate(train_loader):
         if args.cuda:
-            data, target = data, target
+            data, target = data.cuda(), target.cuda()
         data, target = Variable(data), Variable(target)
         optimizer.zero_grad()
         output = model(data)
@@ -174,24 +174,31 @@ def save_checkpoint(state, is_best, filepath):
     if is_best:
         shutil.copyfile(os.path.join(filepath, 'checkpoint.pth.tar'), os.path.join(filepath, 'model_best.pth.tar'))
 
-best_prec1 = 0.
-for epoch in range(args.start_epoch, args.epochs):
-    if epoch in [args.epochs*0.5, args.epochs*0.75]:
-        for param_group in optimizer.param_groups:
-            param_group['lr'] *= 0.1
-    train(epoch)
-    prec1 = test()
-    history_score[epoch][2] = prec1
-    np.savetxt(os.path.join(args.save, 'record.txt'), history_score, fmt = '%10.5f', delimiter=',')
-    is_best = prec1 > best_prec1
-    best_prec1 = max(prec1, best_prec1)
-    save_checkpoint({
-        'epoch': epoch + 1,
-        'state_dict': model.state_dict(),
-        'best_prec1': best_prec1,
-        'optimizer': optimizer.state_dict(),
-    }, is_best, filepath=args.save)
 
-print("Best accuracy: "+str(best_prec1))
-history_score[-1][0] = best_prec1
-np.savetxt(os.path.join(args.save, 'record.txt'), history_score, fmt = '%10.5f', delimiter=',')
+def main():
+    best_prec1 = 0.
+    for epoch in range(args.start_epoch, args.epochs):
+        if epoch in [args.epochs*0.5, args.epochs*0.75]:
+            for param_group in optimizer.param_groups:
+                param_group['lr'] *= 0.1
+        train(epoch)
+        prec1 = test()
+        history_score[epoch][2] = prec1
+        np.savetxt(os.path.join(args.save, 'record.txt'), history_score, fmt = '%10.5f', delimiter=',')
+        is_best = prec1 > best_prec1
+        best_prec1 = max(prec1, best_prec1)
+        save_checkpoint({
+            'epoch': epoch + 1,
+            'state_dict': model.state_dict(),
+            'best_prec1': best_prec1,
+            'optimizer': optimizer.state_dict(),
+        }, is_best, filepath=args.save)
+
+    print("Best accuracy: "+str(best_prec1))
+    history_score[-1][0] = best_prec1
+    np.savetxt(os.path.join(args.save, 'record.txt'), history_score, fmt = '%10.5f', delimiter=',')
+
+if __name__ == '__main__':
+    # Call freeze_support() if you're planning to freeze your application
+    # multiprocessing.freeze_support()
+    main()

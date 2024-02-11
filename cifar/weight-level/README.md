@@ -10,6 +10,8 @@ We prune only the weights in the convolutional layer. We use the mask implementa
 
 ## Baseline 
 
+python cifar_checkpoint.py --dataset cifar10 --arch preresnet --depth 20
+
 The `dataset` argument specifies which dataset to use: `cifar10` or `cifar100`. The `arch` argument specifies the architecture to use: `vgg` or `resnet`. The depth is chosen to be the same as the networks used in the paper.
 ```shell
 python cifar.py --dataset cifar10 --arch vgg19_bn --depth 19

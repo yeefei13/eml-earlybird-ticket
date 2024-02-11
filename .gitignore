@@ -11,3 +11,5 @@ cifar/lottery-ticket/l1-norm-pruning/logs*
 cifar/l1-norm-pruning/data.cifar10*
 
 cifar/l1-norm-pruning/logs*
+
+cifar/network-slimming/data.cifar10*
