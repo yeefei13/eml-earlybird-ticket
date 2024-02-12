@@ -43,11 +43,11 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='how many batches to wait before logging training status')
-parser.add_argument('--save', default='./logs', type=str, metavar='PATH',
+parser.add_argument('--save', default='./eb_result', type=str, metavar='PATH',
                     help='path to save prune model (default: current directory)')
 parser.add_argument('--arch', default='vgg', type=str, 
                     help='architecture to use')
-parser.add_argument('--depth', default=19, type=int,
+parser.add_argument('--depth', default=20, type=int,
                     help='depth of the neural network')
 
 args = parser.parse_args()
@@ -169,8 +169,16 @@ def test():
         100. * correct / len(test_loader.dataset)))
     return correct / float(len(test_loader.dataset))
 
-def save_checkpoint(state, is_best, filepath):
+def save_checkpoint(epoch,state, is_best, filepath):
     torch.save(state, os.path.join(filepath, 'checkpoint.pth.tar'))
+    if epoch == 10:
+        torch.save(state, os.path.join(filepath, 'epoch_10.pth.tar'))
+    if epoch == 30:
+        torch.save(state, os.path.join(filepath, 'epoch_30.pth.tar'))
+    if epoch == 50:
+        torch.save(state, os.path.join(filepath, 'epoch_50.pth.tar'))
+    if epoch == 100:
+        torch.save(state, os.path.join(filepath, 'epoch_100.pth.tar')) 
     if is_best:
         shutil.copyfile(os.path.join(filepath, 'checkpoint.pth.tar'), os.path.join(filepath, 'model_best.pth.tar'))
 
@@ -187,7 +195,7 @@ def main():
         np.savetxt(os.path.join(args.save, 'record.txt'), history_score, fmt = '%10.5f', delimiter=',')
         is_best = prec1 > best_prec1
         best_prec1 = max(prec1, best_prec1)
-        save_checkpoint({
+        save_checkpoint(epoch+1,{
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),
             'best_prec1': best_prec1,
