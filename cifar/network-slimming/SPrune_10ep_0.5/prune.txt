@@ -1,0 +1,6 @@
+Configuration: 
+[8, 14, 16, 23, 13, 16, 29, 28, 32, 22, 29, 32, 35, 37, 62, 18, 46, 64, 155]
+Number of parameters: 
+161416
+Test accuracy: 
+tensor(0.1142)
