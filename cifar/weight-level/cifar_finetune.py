@@ -174,19 +174,19 @@ def main():
         assert os.path.isfile(args.resume), 'Error: no checkpoint directory found!'
         checkpoint = torch.load(args.resume)
 
-        # Load the checkpoint
-        checkpoint = torch.load(args.resume)
+        # # Load the checkpoint
+        # checkpoint = torch.load(args.resume)
 
-        # Adjust the keys
-        new_state_dict = OrderedDict()
-        for k, v in checkpoint['state_dict'].items():
-            name = 'module.' + k  # add `module.` prefix
-            new_state_dict[name] = v
+        # # Adjust the keys
+        # new_state_dict = OrderedDict()
+        # for k, v in checkpoint['state_dict'].items():
+        #     name = 'module.' + k  # add `module.` prefix
+        #     new_state_dict[name] = v
 
-        # Load the adjusted state_dict
-        model.load_state_dict(new_state_dict)
+        # # Load the adjusted state_dict
+        # model.load_state_dict(new_state_dict)
 
-        # model.load_state_dict(checkpoint['state_dict'])
+        model.load_state_dict(checkpoint['state_dict'])
 
     logger = Logger(os.path.join(args.save_dir, 'log_finetune.txt'), title=title)
     logger.set_names(['Learning Rate', 'Train Loss', 'Valid Loss', 'Train Acc.', 'Valid Acc.'])
